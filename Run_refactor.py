@@ -3,7 +3,6 @@ from mylib.centroidtracker import CentroidTracker
 from mylib.trackableobject import TrackableObject
 from imutils.video import VideoStream
 from imutils.video import FPS
-# from mylib.mailer import Mailer
 from mylib import config, thread
 from itertools import zip_longest
 import time
@@ -331,29 +330,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-
-    CAMERA_URL = "https://5536-188-170-129-90.ngrok.io"
-    SID = ""
-
-    r = requests.get(
-        f"{CAMERA_URL}/login?username=operator&password=gdevideo").json()
-    SID = r['sid']
-
-    r = requests.get(f"{CAMERA_URL}/channels?sid={SID}").text
-    channels = json.loads(r.split("/*")[0])['channels']
-
-    r = requests.get(
-        f"{CAMERA_URL}/get_video?channel={channels[0]['guid']}&container=hls&segment_duration=1&stream=main&sid={SID}").json()
-
-    VIDEO_URL = f"{CAMERA_URL}/hls/{r['token']}/master.m3u8"
-    cam = cv2.VideoCapture(VIDEO_URL)
-    cv2.namedWindow("ULSU Cam")
-    while True:
-        f, im = cam.read()
-        imS = cv2.resize(im, (960, 540))
-        cv2.imshow("ULSU Cam", imS)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cam.release()
-    cv2.destroyAllWindows()
+    main()
