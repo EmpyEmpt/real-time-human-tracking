@@ -108,7 +108,7 @@ class Detection:
     def __final_console_output(self, fps):
         """Вывод информации в консоль по завершению"""
         fps.stop()
-        print(f"[INFO] elapsed time: {fps.elapsed():.2f}")
+        print(f"[INFO] elapsed time: {fps.elapsed():.2f}seconds")
         print(f"[INFO] approx. FPS: {fps.fps():.2f}")
 
     def __detect():
