@@ -1,4 +1,3 @@
-import json
 from mylib.centroidtracker import CentroidTracker
 from mylib.trackableobject import TrackableObject
 from imutils.video import VideoStream
@@ -14,9 +13,6 @@ import dlib
 import cv2
 import datetime
 import mylib.config as cfg
-import requests
-import json
-import cv2
 
 t0 = time.time()
 
@@ -45,21 +41,23 @@ class Detection:
         self.confidence = cfg.confidence
         self.log = cfg.log
 
-    def __log_to_csv__(self, empty1, empty, x) -> None:
+    def __log_to_csv(self, empty1, empty, x) -> None:
         """Логирование результатов в csv файл"""
-        datetimee = [datetime.datetime.now()]
-        d = [datetimee, empty1, empty, x]
-        export_data = zip_longest(*d, fillvalue='')
+        # TODO: перепиши эту муть а...
+        # d = [empty1, empty, x]
+        # export_data = zip_longest(*d, fillvalue='')
 
-        with open('Log.csv', 'w', newline='') as myfile:
-            wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
-            wr.writerow(("End Time", "In", "Out", "Total Inside"))
-            wr.writerows(export_data)
+        # with open('Log.csv', 'w', newline='') as myfile:
+        #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+        #     wr.writerow(("In", "Out", "Total Inside"))
 
-    def __draw_window_output__(self, frame, info, info2, H) -> bool:
+        #     wr.writerows(export_data)
+        pass
+
+    def __draw_window_output(self, frame, info, info2, H) -> bool:
         # Вывод информации
         for (i, (k, v)) in enumerate(info):
-            text = "{}: {}".format(k, v)
+            text = f'{k}: {v}'
             cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
@@ -79,25 +77,25 @@ class Detection:
             return True
         return False
 
-    def __draw_visual_line__(self, frame, W, H, i) -> None:
+    def __draw_visual_line(self, frame, W, H, i) -> None:
         """Зарисовка визуальной линии-прохода на кадре"""
         # h // 2 было
         cv2.line(frame, (0, (H // 2)), (W, (H // 2)), (0, 0, 0), 3)
         cv2.putText(frame, "-Prediction border - Entrance-", (10, H - ((i * 20))),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
 
-    def __draw_object__(self, frame,  centroid, objectID) -> None:
+    def __draw_object(self, frame,  centroid, objectID) -> None:
         """Зарисовка ID объекта и зарисовка его на кадре"""
-        text = "ID {}".format(objectID)
+        text = f'ID {objectID}'
         cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         cv2.circle(frame, (centroid[0], centroid[1]), 4, (255, 255, 255), -1)
         pass
 
-    def __create_detection_line__(self):
+    def __create_detection_line(self):
         pass
 
-    def __grab_stream__(self):
+    def __grab_stream(self):
         """Захват видеопотока"""
         if self.isstream:
             print("[INFO] Starting the live stream..")
@@ -107,13 +105,16 @@ class Detection:
             print("[INFO] Starting the video..")
             self.vs = cv2.VideoCapture(self.input)
 
-    def __final_console_output__(self, fps):
+    def __final_console_output(self, fps):
         """Вывод информации в консоль по завершению"""
         fps.stop()
-        print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
-        print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+        print(f"[INFO] elapsed time: {fps.elapsed():.2f}")
+        print(f"[INFO] approx. FPS: {fps.fps():.2f}")
 
-    def __init_writer__(self):
+    def __detect():
+        pass
+
+    def __init_writer(self):
         pass
 
     def run(self):
@@ -123,26 +124,25 @@ class Detection:
                    "sofa", "train", "tvmonitor"]
         net = cv2.dnn.readNetFromCaffe(self.prototxt, self.model)
 
-        self.__grab_stream__()
+        self.__grab_stream()
 
         # Перенести CT в инит?
         ct = CentroidTracker(maxDisappeared=40, maxDistance=50)
-        writer = None
-        trackers = []
-        trackableObjects = {}
-        totalFrames = 0
-        totalDown = 0
-        totalUp = 0
-        people_inside = []
-        total_up_list = []
-        total_down_list = []
-        fps = FPS().start()
+        self.writer = None
+        self.trackers = []
+        self.trackableObjects = {}
+        self.totalFrames = 0
+        self.totalDown = 0
+        self.totalUp = 0
+        self.people_inside = []
+        self.total_up_list = []
+        self.total_down_list = []
+        self.fps = FPS().start()
         VIDEO_WIDTH = None
         VIDEO_HEIGHT = None
 
         while True:
             frame = self.vs.read()
-            print(type(frame))
             # Для видео
             if not self.isstream:
                 frame = frame[1]
@@ -157,10 +157,9 @@ class Detection:
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Запись видео-результата, если указано
-            # Перенести в __init_writer__ ?
-            if self.output is not None and writer is None:
+            if self.output is not None and self.writer is None:
                 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-                writer = cv2.VideoWriter(
+                self.writer = cv2.VideoWriter(
                     self.output, fourcc, 30, (VIDEO_WIDTH, VIDEO_HEIGHT), True)
 
             # Инициализация статуса (визуально) и
@@ -171,14 +170,13 @@ class Detection:
 
             # Object-detection в помощь Object-tracker'у,
             # проверка на необходить детекта
-            if totalFrames % self.skip_frames == 0:
-                # Перенести в self.detect ?
+            if self.totalFrames % self.skip_frames == 0:
                 status = "Detecting"
-                trackers = []
+                self.trackers = []
 
                 # конвертация кадра в блоб и прогон через нейронку
                 blob = cv2.dnn.blobFromImage(
-                    frame, 0.007843, (VIDEO_WIDTH, VIDEO_HEIGHT), 250)
+                    frame, 0.007843, (VIDEO_WIDTH, VIDEO_HEIGHT), 150)
                 net.setInput(blob)
                 detections = net.forward()
 
@@ -186,12 +184,10 @@ class Detection:
                 for i in np.arange(0, detections.shape[2]):
                     # получение уверенности
                     confidence_gotten = detections[0, 0, i, 2]
-
-                    # Отфильтровка слабых предположений
-                    if not confidence_gotten > self.confidence:
-                        continue
                     idx = int(detections[0, 0, i, 1])
                     if CLASSES[idx] != "person":
+                        continue
+                    if not confidence_gotten > self.confidence:
                         continue
 
                     # вычисление x, y координат для описывающей коробки обьекта
@@ -205,14 +201,12 @@ class Detection:
                     tracker.start_track(rgb, rect)
 
                     # добавляем трекер к списку трекеров
-                    trackers.append(tracker)
+                    self.trackers.append(tracker)
 
             # Если нужное кол-во кадрво не прошло, занимаемся
             # 	трекингом, вместо детектинга
-            # 	с целью повышения скорости работы
             else:
-                # Перенести в self.track ?
-                for tracker in trackers:
+                for tracker in self.trackers:
                     status = "Tracking"
 
                     # Получаем обновленную позицию
@@ -226,7 +220,7 @@ class Detection:
                     # добавляем координаты в список описывающих коробок
                     rects.append((startX, startY, endX, endY))
 
-            self.__draw_visual_line__(frame, VIDEO_WIDTH, VIDEO_HEIGHT, i)
+            self.__draw_visual_line(frame, VIDEO_WIDTH, VIDEO_HEIGHT, i)
 
             # Использованеи центроид трекера для связки старых обьектов-центроидов
             # 	(чтобы не создавать новые) и новых границ обьектов
@@ -234,22 +228,8 @@ class Detection:
             for (objectID, centroid) in objects.items():
 
                 # Проверка существует ли отслеживаемый обьект для выдранного ID
-                to = trackableObjects.get(objectID, None)
-                """Я не совсем понимаю в чем смысл if-else ветвления тут:
+                to = self.trackableObjects.get(objectID, None)
 
-				if проверяет привязан ли обьект к центроиду и отслеживается,
-				если нет - связывает центроид и ID
-				
-				но зачем тут else?
-				Получается, мы пропускаем один прогон отслеживания 
-				(и детекта пересечения линии, соответственно)
-				если обьект был только что создан?
-				Не лучше ли убрать else и просто продолжить код?
-				
-				Тем более после ветвления мы в любом случае заносим обьект
-				в список
-				+ без else небольшой прирост производительности
-				Ничего не понимаю..."""
                 # Если отсуствует - создаем
                 if to is None:
                     to = TrackableObject(objectID, centroid)
@@ -260,63 +240,57 @@ class Detection:
                     # и ср. арифм. предыдущего позволяет нам понать двигается обьект
                     # вверх (отрицательное) или вниз (положительное)
 
-                    # для более сложных линий (как у нас) придется поменять, наверное
+                    # для более сложных линий придется поменять, наверное
                     y = [c[1] for c in to.centroids]
                     direction = centroid[1] - np.mean(y)
                     to.centroids.append(centroid)
 
-                    # Проверка был ли обьект подсчитан
+                    # TODO: Сделать нормальный метод подсчета
                     if not to.counted:
                         # Если обьект двигается вверх И центроид выше линии - подсчитываем
                         # Тут VIDEO_HEIGHT // 2 - ровно центральная линия
                         if direction < 0 and centroid[1] < VIDEO_HEIGHT // 2:
-                            totalUp += 1
-                            total_up_list.append(totalUp)
+                            self.totalUp += 1
+                            self.total_up_list.append(self.totalUp)
                             to.counted = True
 
                         # Если вниз
                         elif direction > 0 and centroid[1] > VIDEO_HEIGHT // 2:
-                            totalDown += 1
-                            total_down_list.append(totalDown)
+                            self.totalDown += 1
+                            self.total_down_list.append(self.totalDown)
                             to.counted = True
 
-                        people_inside = []
+                        self.people_inside = []
                         # Подсчет суммы людей внутри
-                        people_inside.append(
-                            len(total_down_list)-len(total_up_list))
+                        self.people_inside.append(
+                            len(self.total_down_list)-len(self.total_up_list))
 
-                # Храним отслеживаемый обьект
-                trackableObjects[objectID] = to
-                # Зарисовка ID обьекта и центроида на кадре
-                self.__draw_object__(frame, centroid, objectID)
+                self.trackableObjects[objectID] = to
+                self.__draw_object(frame, centroid, objectID)
 
             # Подготовка информации для вывода
-            # Мне не особо нравится передача информации в два списка
-            # 	не лучше в один затолкнуть?
             info1 = [
-                ("Exit", totalUp),
-                ("Enter", totalDown),
+                ("WentUp", self.totalUp),
+                ("WentDown", self.totalDown),
                 ("Status", status),
             ]
-            info2 = [("Total people inside", people_inside), ]
+            info2 = [("Total people inside", self.people_inside), ]
 
             if self.log:
-                self.__log_to_csv__(
-                    total_up_list, total_down_list, people_inside)
+                self.__log_to_csv(
+                    self.total_up_list, self.total_down_list, self.people_inside)
 
             # Запись получившегося кадра
-            # В отдельный метод тоже?
-            if writer is not None:
-                writer.write(frame)
+            if self.writer is not None:
+                self.writer.write(frame)
 
-            if self.__draw_window_output__(frame, info1, info2, VIDEO_HEIGHT):
+            if self.__draw_window_output(frame, info1, info2, VIDEO_HEIGHT):
                 break
 
-            totalFrames += 1
-            fps.update()
+            self.totalFrames += 1
+            self.fps.update()
 
-        # Остановка таймера и вывод FPS
-        self.__final_console_output__(fps)
+        self.__final_console_output(self.fps)
 
         if config.Thread:
             self.vs.release()
